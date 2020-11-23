@@ -179,18 +179,19 @@ class _TRAINER(object):
             
             NLL_loss = self.m_rec_loss(logits, target_gpu)
 
-            batch_size = user_gpu.size(0)
-            preds = logits.cpu().reshape(-1, self.m_vocab_size)
-            targets = target_batch.reshape(-1, self.m_vocab_size)
+            # batch_size = user_gpu.size(0)
+            # preds = logits.cpu().reshape(-1, self.m_vocab_size)
+            # targets = target_batch.reshape(-1, self.m_vocab_size)
             
             # print("preds", preds.size())
 
-            precision, recall, F1 = get_precision_recall_F1_train(preds, targets, topk)
+            # precision, recall, F1 = get_precision_recall_F1_train(preds, targets, topk)
 
             loss = NLL_loss
 
             precision = 1.0
             recall = 1.0
+            F1 = 1.0
 
             loss_list.append(loss.item()) 
             precision_list.append(precision)

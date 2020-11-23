@@ -28,23 +28,26 @@ class WINE(Dataset):
         self.m_sample_num = len(df)
         print("sample num", self.m_sample_num)
 
-        self.m_batch_num = int(self.m_sample_num/self.m_batch_size)
+        # self.m_batch_num = int(self.m_sample_num/self.m_batch_size)
         
-        if (self.m_sample_num/self.m_batch_size - self.m_batch_num) > 0:
-            self.m_batch_num += 1
+        # if (self.m_sample_num/self.m_batch_size - self.m_batch_num) > 0:
+        #     self.m_batch_num += 1
 
-        print("batch num", self.m_batch_num)
+        # print("batch num", self.m_batch_num)
 
         ###get length
     
         self.m_item_batch_list = []
         self.m_user_batch_list = []
         
-        self.m_pos_target_list = []
-        self.m_pos_len_list = []
+        # self.m_pos_target_list = []
+        # self.m_pos_len_list = []
 
-        self.m_neg_target_list = []
-        self.m_neg_len_list = []
+        # self.m_neg_target_list = []
+        # self.m_neg_len_list = []
+
+        self.m_attr_list = []
+        self.m_target_list = []
 
         userid_list = df.userid.tolist()
         itemid_list = df.itemid.tolist()
@@ -53,6 +56,7 @@ class WINE(Dataset):
         pos_attr_list = df.pos_attr.tolist()
 
         whole_attr_list = [i for i in range(self.m_vocab_size)]
+        neg_sample_num = 100
 
         for sample_index in range(self.m_sample_num):
             user_id = userid_list[sample_index]
@@ -61,22 +65,29 @@ class WINE(Dataset):
             pos_attrlist_i = list(pos_attr_list[sample_index])
             pos_attrlist_i = [int(j) for j in pos_attrlist_i] 
             
-            neg_attrlist_i = set(pos_attrlist_i)^set(whole_attr_list)
-            neg_attrlist_i = list(neg_attrlist_i)
+            full_neg_attrlist_i = set(pos_attrlist_i)^set(whole_attr_list)
+            full_neg_attrlist_i = list(full_neg_attrlist_i)
+            random.shuffle(full_neg_attrlist_i)
+            neg_attrlist_i = full_neg_attrlist_i[:neg_sample_num]
             neg_attrlist_i = [int(j) for j in neg_attrlist_i]
 
             for j in range(len(pos_attrlist_i)):
                 self.m_user_batch_list.append(user_id)
                 self.m_item_batch_list.append(item_id)
 
-                self.m_pos_target_list.append(pos_attrlist_i[j])
+                self.m_attr_list.append(pos_attrlist_i[j])
+                self.m_target_list.append([1])
 
             for j in range(len(neg_attrlist_i)):
                 self.m_user_batch_list.append(user_id)
                 self.m_item_batch_list.append(item_id)
-                self.m_neg_target_list.append(neg_attrlist_i)
+                self.m_attr_list.append(neg_attrlist_i[j])
+                self.m_target_list.append([0])
 
         print("... load train data ...", len(self.m_item_batch_list))
+
+        self.m_batch_num = len(self.m_item_batch_list)/self.m_batch_size
+        print("batch num", self.m_batch_num)
         # exit()
 
     def __len__(self):
@@ -92,11 +103,11 @@ class WINE(Dataset):
 
         user_i = self.m_user_batch_list[i]
 
-        pos_target_i = self.m_pos_target_list[i]
+        attr_i = self.m_attr_list[i]
 
-        neg_target_i = self.m_neg_target_list[i]
+        target_i = self.m_target_list[i]
 
-        sample_i = { "item": item_i,  "user": user_i,  "pos_target": pos_target_i, "neg_target": neg_target_i}
+        sample_i = { "item": item_i,  "user": user_i,  "attr": attr_i, "target": target_i}
 
         return sample_i
     
@@ -104,9 +115,9 @@ class WINE(Dataset):
     def collate(batch):
         batch_size = len(batch)
 
-        item_iter = []
-
         user_iter = []
+
+        item_iter = []
 
         attr_iter = []
 
@@ -115,23 +126,18 @@ class WINE(Dataset):
         for i in range(batch_size):
             sample_i = batch[i]
 
-            item_i = sample_i["item"]
-        
             user_i = sample_i["user"]
-            
-            pos_target_i = copy.deepcopy(sample_i["pos_target"])
-            for j in range(len(pos_target_i)):
-                item_iter.append(item_i)
-                user_iter.append(user_i)
-                attr_iter.append(pos_target_i[j])
-                target_iter.append([1])
+            user_iter.append(user_i)
 
-            neg_target_i = copy.deepcopy(sample_i["neg_target"])
-            for j in range(len(neg_target_i)):
-                item_iter.append(item_i)
-                user_iter.append(user_i)
-                attr_iter.append(neg_target_i[j])
-                target_iter.append([0])
+            item_i = sample_i["item"]
+            item_iter.append(item_i)
+            
+            attr_i = copy.deepcopy(sample_i["attr"])
+
+            target_i = copy.deepcopy(sample_i["target"])
+        
+            attr_iter.append(attr_i)
+            target_iter.append(target_i)
 
         user_iter_tensor = torch.from_numpy(np.array(user_iter)).long()
         item_iter_tensor = torch.from_numpy(np.array(item_iter)).long()
@@ -158,11 +164,11 @@ class WINE_TEST(Dataset):
         self.m_sample_num = len(df)
         print("sample num", self.m_sample_num)
 
-        self.m_batch_num = int(self.m_sample_num/self.m_batch_size)
-        print("batch num", self.m_batch_num)
+        # self.m_batch_num = int(self.m_sample_num/self.m_batch_size)
+        # print("batch num", self.m_batch_num)
 
-        if (self.m_sample_num/self.m_batch_size - self.m_batch_num) > 0:
-            self.m_batch_num += 1
+        # if (self.m_sample_num/self.m_batch_size - self.m_batch_num) > 0:
+        #     self.m_batch_num += 1
 
         ###get length
     
@@ -190,7 +196,10 @@ class WINE_TEST(Dataset):
             self.m_target_len_list.append(len(attrlist_i))
 
         print("... load train data ...", len(self.m_item_batch_list))
-        # exit()
+
+        self.m_batch_num = len(self.m_item_batch_list)/self.m_batch_size
+        print("batch num", self.m_batch_num)
+        
 
     def __len__(self):
         return len(self.m_item_batch_list)

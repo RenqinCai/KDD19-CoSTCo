@@ -21,8 +21,8 @@ class BCE_LOSS(nn.Module):
 
         loss = self.m_bce_loss(preds, targets)
 
-        batch_size = preds.size(0)
-        loss = loss/batch_size
+        # batch_size = preds.size(0)
+        # loss = loss/batch_size
 
         return loss
 
