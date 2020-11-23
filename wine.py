@@ -56,7 +56,7 @@ class WINE(Dataset):
         pos_attr_list = df.pos_attr.tolist()
 
         whole_attr_list = [i for i in range(self.m_vocab_size)]
-        neg_sample_num = 100
+        neg_sample_num = 300
 
         for sample_index in range(self.m_sample_num):
             user_id = userid_list[sample_index]
